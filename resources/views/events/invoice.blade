@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice for Event #{{ $event->id }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto my-10 p-10 bg-white shadow-lg">
+        <div class="flex justify-between items-start mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">INVOICE</h1>
+                <p class="text-gray-500">Invoice #: {{ $event->receipt_number ?? 'N/A' }}</p>
+                <p class="text-gray-500">Date: {{ now()->format('d M, Y') }}</p>
+            </div>
+            <div class="text-right">
+                <h2 class="text-2xl font-semibold">{{ config('app.name', 'Banquet Hall') }}</h2>
+                <p class="text-gray-600">Your Company Address</p>
+                <p class="text-gray-600">Your Company Phone</p>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-700 border-b-2 pb-2">Bill To:</h3>
+            <p class="mt-2 font-bold">{{ $event->customer->name }}</p>
+            <p class="text-gray-600">{{ $event->customer->address }}</p>
+            <p class="text-gray-600">{{ $event->customer->contact_number }}</p>
+        </div>
+
+        <div>
+            <table class="w-full text-left">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="p-3">Description</th>
+                        <th class="p-3 text-right">Amount (RM)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b">
+                        <td class="p-3">
+                            {{ $event->event_type }} on {{ \Carbon\Carbon::parse($event->event_date)->format('d M, Y') }}
+                            <br><small class="text-gray-500">({{ $event->pax }} pax)</small>
+                        </td>
+                        <td class="p-3 text-right">{{ number_format($event->agreed_amount, 2) }}</td>
+                    </tr>
+                </tbody>
+                <tfoot class="text-gray-800 font-semibold">
+                    <tr>
+                        <td class="p-3 text-right">Subtotal:</td>
+                        <td class="p-3 text-right">{{ number_format($subtotal, 2) }}</td>
+                    </tr>
+                    @if($taxAmount > 0)
+                    <tr>
+                        <td class="p-3 text-right">Tax ({{ $taxDisplay }}):</td>
+                        <td class="p-3 text-right">{{ number_format($taxAmount, 2) }}</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td class="p-3 text-right">Discount:</td>
+                        <td class="p-3 text-right">- {{ number_format($event->discount_amount, 2) }}</td>
+                    </tr>
+                    <tr class="bg-gray-200 text-xl">
+                        <td class="p-3 text-right font-bold">Grand Total:</td>
+                        <td class="p-3 text-right font-bold">{{ number_format($grandTotal, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-3 text-right">Advance Paid:</td>
+                        <td class="p-3 text-right">- {{ number_format($event->advance_payment, 2) }}</td>
+                    </tr>
+                    <tr class="text-red-500 text-2xl">
+                        <td class="p-3 text-right font-extrabold">Balance Due:</td>
+                        <td class="p-3 text-right font-extrabold">{{ number_format($balanceDue, 2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="no-print mt-10 text-center">
+            <button onclick="window.print()" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Print Invoice</button>
+        </div>
+    </div>
+</body>
+</html>

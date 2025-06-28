@@ -1,30 +1,38 @@
-# Use the official Render PHP 8.2 base image
-FROM render/php:8.2-fpm
+# Step 1: Use the official PHP 8.2 image as a base
+FROM php:8.2-fpm
 
-# Set working directory
+# Step 2: Set the working directory
 WORKDIR /var/www/html
 
-# Install PHP extensions required by Laravel
-RUN docker-php-ext-install pdo pdo_mysql
+# Step 3: Install system dependencies needed for Laravel
+# (git, curl, libpng, libonig, libxml, zip, unzip)
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip
 
-# Copy existing application directory contents
+# Step 4: Install the required PHP extensions for Laravel
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Step 5: Install Composer (PHP package manager)
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Step 6: Copy the application code into the container
 COPY . .
 
-# Copy composer.lock and composer.json
-COPY composer.lock composer.json ./
+# Step 7: Install composer dependencies
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Install composer dependencies
-# The --ignore-platform-reqs flag is needed for the new image
-RUN composer install --no-interaction --optimize-autoloader --no-dev --ignore-platform-reqs
+# Step 8: Set correct permissions for storage and bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Generate the application key during the build
-RUN php artisan key:generate
-
-# Link the storage folder
-RUN php artisan storage:link
-
-# Expose port 8000 for the Laravel server
+# Step 9: Expose port 8000 for the Laravel server
 EXPOSE 8000
 
-# The command to run when the container starts
+# Step 10: The command to run when the container starts
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

@@ -1,5 +1,5 @@
-# Use the official Render PHP base image
-FROM render/php:8.2-fpm-alpine
+# Use the official Render PHP 8.2 base image
+FROM render/php:8.2-fpm
 
 # Set working directory
 WORKDIR /var/www/html
@@ -14,7 +14,14 @@ COPY . .
 COPY composer.lock composer.json ./
 
 # Install composer dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+# The --ignore-platform-reqs flag is needed for the new image
+RUN composer install --no-interaction --optimize-autoloader --no-dev --ignore-platform-reqs
+
+# Generate the application key during the build
+RUN php artisan key:generate
+
+# Link the storage folder
+RUN php artisan storage:link
 
 # Expose port 8000 for the Laravel server
 EXPOSE 8000

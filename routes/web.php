@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StockLogController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,22 +21,10 @@ use App\Http\Controllers\StockLogController;
 |--------------------------------------------------------------------------
 */
 
-// --- SPECIAL SETUP ROUTE FOR RENDER DEPLOYMENT ---
-// This route will be used by Render's Health Check to set up the database.
-Route::get('/setup', function() {
-    // Check if the database file exists, if not, create it.
-    if (!file_exists(database_path('database.sqlite'))) {
-        touch(database_path('database.sqlite'));
-        \Illuminate\Support\Facades\Log::info('Created SQLite database file.');
-    }
-
-    // Run migrations and seeders. The --force flag is needed for production.
-    Artisan::call('migrate:fresh', [
-        '--seed' => true,
-        '--force' => true
-    ]);
-    
-    return 'Setup Complete: Database migrated and seeded successfully.';
+// This special route is only for deployment on Render. You can ignore it.
+Route::get('/setup-application', function() {
+    Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
+    return 'Application Setup Complete.';
 });
 
 
@@ -52,9 +41,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('You are absolutely right. I apologize. Here is the complete and final code for the `routes/web.php` file with the special `/setup` route included.
-
-This is the only file you need to change fromprofile.update');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('customers', CustomerController::class);
@@ -62,27 +49,24 @@ This is the only file you need to change fromprofile.update');
     Route::get('/events/{event}/invoice', [EventController::class, 'invoice'])->name('events.invoice');
     Route::resource('inventory-items', InventoryItemController::class);
     Route::get('/inventory-items/{inventoryItem}/stock-logs', [StockLogController::class, 'index'])->name('stock-logs.index');
-    Route::post('/inventory-items/{inventoryItem}/stock- the previous step.
+    Route::post('/inventory-items/{inventoryItem}/stock-logs', [StockLogController::class, 'store'])->name('stock-logs.store');
 
----
-
-### **`routes/web.php` (Complete Final Version for Render)**
-
-**Action:** Please replace the entire content of your `routes/web.php` file with this code.
-
-```php
-<?phplogs', [StockLogController::class, 'store'])->name('stock-logs.store');
-
-    Route::middleware(['permission:access finance'])->group(function () {
+    Route::middleware(['role:Admin/Manager|Super Admin'])->group(function () {
         Route::resource('expenses', ExpenseController::class);
         Route::resource('packages', PackageController::class);
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/financial', [ReportController::class, 'financial'])->name('reports.financial');
     });
 
-    Route::middleware(['permission:manage users'])->group(function () {
+    Route::middleware(['role:Super Admin'])->group(function () {
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'store'])->name('settings.store');
+
+        // --- THIS IS THE MISSING PART THAT THIS FILE ADDS ---
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        // ---------------------------------------------------
     });
 });
 
